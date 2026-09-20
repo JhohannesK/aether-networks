@@ -40,3 +40,4 @@ variable it reads and nothing else.
 | Application | Language | What it does |
 | --- | --- | --- |
 | [worldline](worldline) | Python | Snapshot-branch competing plans, verify their artifacts, and replay only the winner |
+| [aether-network](aether-network) | TypeScript | Self-funding stealth-agent marketplace: hunt Solana, record the work, settle USDC |
