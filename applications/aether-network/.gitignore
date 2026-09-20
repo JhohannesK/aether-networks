@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+coverage
+data
+*.db
+*.db-wal
+*.db-shm
+.env*
+!.env.example
+.DS_Store
+*.pem
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts

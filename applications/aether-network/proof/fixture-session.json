@@ -1,0 +1,10 @@
+{
+  "title": "Nyx · fixture warmup",
+  "mode": "mock",
+  "kind": "hunt",
+  "timeline": [
+    { "t": 0, "action": "launch", "detail": "mock stealth session" },
+    { "t": 800, "action": "goto", "detail": "https://dexscreener.com" },
+    { "t": 1400, "action": "extract", "detail": "fixture pairs until the worker hunts" }
+  ]
+}
