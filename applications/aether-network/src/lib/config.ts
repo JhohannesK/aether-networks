@@ -1,7 +1,8 @@
 import path from "node:path";
 
 function read(name: string, fallback = "") {
-  return (process.env[name] ?? fallback).trim();
+  const value = (process.env[name] ?? "").trim();
+  return value.length > 0 ? value : fallback;
 }
 
 export const TAKE_RATE = 0.1;

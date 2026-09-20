@@ -6,7 +6,7 @@ data
 *.db
 *.db-wal
 *.db-shm
-.env
+.env*
 !.env.example
 .DS_Store
 *.pem
