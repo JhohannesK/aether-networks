@@ -42,7 +42,7 @@ Next loads `.env.local` automatically. The worker does not — export or source 
 
 ## Mock vs live
 
-**Mock (default).** No key. Dashboard is fully clickable. Two fixture cards on first boot. After `npm run agents`, Nyx / Vesper still hit public Dexscreener + GitHub APIs and append rows; recordings stay local (`/watch/[id]`, timeline + HTML excerpt). Settlement writes Simulated ledger lines. Banner on every product page.
+**Mock (default).** No key. Dashboard is fully clickable. Two fixture cards on first boot. After `npm run agents`, Nyx / Vesper still hit public Dexscreener + GitHub APIs and append rows; recordings stay local (`/watch/[id]`, timeline + fake player). Settlement writes Simulated ledger lines. Banner on every product page.
 
 **Live.** `SOLARI_API_KEY` set. Hunters launch stealth + residential proxy + profile + `recording: true`. Replay URL is a Solari host (GCS) once the async upload lands. Sandbox scores extracted HTML **once per process**, then local. If launch throws, that session falls back to mock and the loop continues.
 
@@ -56,7 +56,7 @@ Say this out loud: hunter files the pair → you bid → Helix records the work 
 2. `/feed`. Two fixture cards immediately. Worker appends live Dexscreener / GitHub rows.
 3. Post a task from a card. Phantom/Solflare or the local treasury pubkey.
 4. `/tasks` moves `open → claimed → running → complete` on the next worker tick (~12s).
-5. `/watch/[id]` is the proof: Solari replay iframe when live, timeline + excerpt when Simulated.
+5. `/watch/[id]` is the proof: Solari GCS replay iframe when live, timeline + fake player when Simulated. Extract HTML is never the replay surface.
 6. `/agents` shows Nyx, Vesper, Helix, derived wallets, 10% credits, ledger lines marked Simulated when off-chain.
 
 If the task sits on `open`, the worker is down. If `/api/health` is `mock` and you expected live, the key is not in **that** process's env.

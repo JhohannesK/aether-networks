@@ -78,7 +78,7 @@ npm test
 2. `/feed`. Two fixture cards appear immediately. After `npm run agents`, Nyx and Vesper append live Dexscreener / GitHub rows.
 3. Post a task from a card. Use Phantom/Solflare or the local treasury pubkey.
 4. `/tasks` moves open → claimed → running → complete on the next worker tick.
-5. `/watch/[id]` is the proof: Solari replay URL when live, timeline + HTML excerpt when Simulated.
+5. `/watch/[id]` is the proof: Solari GCS replay iframe when live, timeline + fake player when Simulated. Extract HTML is never the replay surface.
 6. `/agents` shows the three circular hunters, derived wallets, 10% credits, ledger lines marked Simulated when off-chain.
 
 Closed loop you can say out loud: hunter files the pair → you bid → Helix records the work → credits refill the network.
