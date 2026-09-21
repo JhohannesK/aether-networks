@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { WalletConnect } from "@/components/wallet-connect";
+import { isHttpUrl } from "@/lib/utils";
 
 export function CreateTaskDialog({
   defaultTitle,
@@ -37,6 +38,11 @@ export function CreateTaskDialog({
   async function submit() {
     setBusy(true);
     setError(null);
+    if (!isHttpUrl(url)) {
+      setBusy(false);
+      setError("URL must be http(s).");
+      return;
+    }
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,7 +56,8 @@ export function CreateTaskDialog({
     });
     setBusy(false);
     if (!res.ok) {
-      setError("Could not post the task.");
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(body?.error ?? "Could not post the task.");
       return;
     }
     setOpen(false);
@@ -68,6 +75,7 @@ export function CreateTaskDialog({
           <DialogTitle>Bid the work</DialogTitle>
           <DialogDescription>
             Helix claims it, records the run, and settles 90/10 on the ledger.
+            Any https URL works.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

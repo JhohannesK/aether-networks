@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/lib/db";
 import { emit } from "@/lib/events";
 import { runHunt, runPaidTask, ensureHunters } from "@/lib/agents/hunters";
-import { settleTask } from "@/lib/market/settlement";
+import { getRail } from "@/lib/market/rails/registry";
 import { nowMs } from "@/lib/utils";
 
 let busy = false;
@@ -55,11 +55,11 @@ async function processJobs() {
         case "run-task":
           if (payload.taskId) {
             await runPaidTask(payload.taskId);
-            await settleTask(payload.taskId);
+            await getRail().settle(payload.taskId);
           }
           break;
         case "settle":
-          if (payload.taskId) await settleTask(payload.taskId);
+          if (payload.taskId) await getRail().settle(payload.taskId);
           break;
         default: {
           const _never: never = kind;

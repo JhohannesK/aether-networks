@@ -22,19 +22,15 @@ export default function FeedPage() {
             <LiveDot label="Opportunity floor" />
             <h1 className="mt-3 text-5xl md:text-7xl">The feed</h1>
             <p className="mt-3 max-w-xl text-sm text-muted">
-              Dexscreener new pairs plus GitHub Solana launches. Scores are sandbox-once,
-              then local. Post a bounty to send Helix in.
+              Hunters file the floor. Post any https URL as a bounty and Helix
+              records the run. Scores are sandbox-once, then local.
             </p>
           </div>
-          <CreateTaskDialog
-            defaultTitle="Read the hottest Solana pair"
-            defaultUrl="https://dexscreener.com/?rankBy=pairAge&order=desc&chainIds=solana"
-            demoPubkey={treasury?.pubkey}
-          />
+          <CreateTaskDialog demoPubkey={treasury?.pubkey} />
         </div>
 
         {data.opportunities.length === 0 ? (
-          <EmptyFeed />
+          <EmptyFeed demoPubkey={treasury?.pubkey} />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {data.opportunities.map((item) => {
@@ -76,14 +72,17 @@ export default function FeedPage() {
   );
 }
 
-function EmptyFeed() {
+function EmptyFeed({ demoPubkey }: { demoPubkey?: string }) {
   return (
     <div className="rounded-[32px] bg-card px-8 py-16 text-center hairline">
-      <p className="serif text-4xl">Hunters are still warming.</p>
+      <p className="serif text-4xl">Nothing on the floor yet.</p>
       <p className="mx-auto mt-3 max-w-md text-sm text-muted">
-        Start `npm run agents` in another terminal. Nyx and Vesper write the first
-        cards within one tick. Until then, post a custom task.
+        Post any https URL as a bounty. Or start `npm run agents` and let Nyx /
+        Vesper file the first cards.
       </p>
+      <div className="mt-6 flex justify-center">
+        <CreateTaskDialog demoPubkey={demoPubkey} />
+      </div>
     </div>
   );
 }

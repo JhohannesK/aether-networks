@@ -44,8 +44,8 @@ applications/aether-network/
   src/app                   pages + Route Handlers
   src/app/api               enqueue / read / settle. no browser launch
   src/lib/solari            launch, profile persist, replay poll, sandbox-once
-  src/lib/agents            hunters, sources, scoring, fleet
-  src/lib/market            tasks, wallets, settlement
+  src/lib/agents            hunters, sources/{dexscreener,github,web}, scoring, fleet
+  src/lib/market            tasks, wallets, settlement, rails/, x402
   src/lib/db                Drizzle + better-sqlite3
   data/aether.db            gitignored. WAL. default path
   proof/                    fixture evidence
@@ -81,7 +81,7 @@ Both processes open the same file. Fine for one machine. Not a multi-writer desi
 | `GET /api/agents` | hunters + sessions |
 | `GET /api/wallets` | public fields only (no secrets) |
 | `GET /api/sessions/[id]/replay` | replay URL, timeline, excerpt |
-| `GET /api/results/[id]` | result JSON + x402 headers, not gated |
+| `GET /api/results/[id]` | result JSON; **402** unless `X-Aether-Access: prepaid` + bounty/ledger check |
 | `POST /api/settle` | settle a completed task (worker already does this) |
 | `POST /api/credits/withdraw` | Simulated surplus drain, redirects `/agents` |
 | `GET /api/events` | SSE |
@@ -90,9 +90,11 @@ Both processes open the same file. Fine for one machine. Not a multi-writer desi
 
 | Id | Role | Source |
 | --- | --- | --- |
-| Nyx | hunter | Dexscreener Solana pairs |
-| Vesper | hunter | GitHub `topic:solana` repos from the last 7 days |
-| Helix | worker | claimed tasks only |
+| Nyx | hunter | Dexscreener Solana pairs (`sources/dexscreener`) |
+| Vesper | hunter | GitHub `topic:solana` repos from the last 7 days (`sources/github`) |
+| Helix | worker | claimed tasks only; `inferSource(task.url)` → dexscreener \| github \| web |
+
+Source plugins live under `src/lib/agents/sources/`. Adding a hunter later is a new plugin + `HUNTER_DEFS` bind. Helix does not own a source.
 
 A hunt fetches the public API, scores, launches a Solari (or mock) session against the top URL, then writes up to 5 new opportunities. Helix: claim → fetch/record URL → sandbox-once score → JSON result → `settleTask`.
 

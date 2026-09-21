@@ -9,12 +9,14 @@ import {
   replayUrlAfterClose,
 } from "@/lib/solari/launch";
 import {
-  fetchDexscreener,
-  fetchGithubLaunches,
+  getSource,
+  inferSource,
   withScores,
   type FoundOpportunity,
+  type SourceId,
 } from "@/lib/agents/sources";
 import { ensureWallets } from "@/lib/market/wallets";
+import { hostOf } from "@/lib/replay/surface";
 import { nowMs } from "@/lib/utils";
 
 export const HUNTER_DEFS = [
@@ -125,10 +127,12 @@ export async function runHunt(hunterId: HunterId) {
   setHunter(hunterId, "hunting");
   emit("info", `${hunter.name} is hunting ${hunter.source}`);
 
-  const found =
-    hunter.source === "dexscreener"
-      ? await fetchDexscreener()
-      : await fetchGithubLaunches();
+  const plugin = getSource(hunter.source as SourceId);
+  if (!plugin.fetch) {
+    setHunter(hunterId, "idle");
+    return [];
+  }
+  const found = await plugin.fetch();
 
   const scored = withScores(found).sort((a, b) => b.scored.score - a.scored.score);
   const top = scored[0];
@@ -173,16 +177,17 @@ export async function runPaidTask(taskId: string) {
 
   try {
     const html = await fetchPageHtml(task.url);
+    const source = inferSource(task.url);
     const session = await captureSession({
       hunterId: "helix",
       kind: "task",
       title: `Helix · ${task.title}`,
       url: task.url,
       html,
-      source: "dexscreener",
+      source,
     });
 
-    const { result, via } = await scoreHtmlOnce(html, "dexscreener");
+    const { result, via } = await scoreHtmlOnce(html, source, task.url);
     const payload = {
       title: task.title,
       url: task.url,
@@ -272,7 +277,8 @@ async function fetchPageHtml(url: string) {
     const html = await res.text();
     return html.slice(0, 20_000);
   } catch {
-    return `<html><title>${url}</title><body>Solana surface ${url}</body></html>`;
+    const host = hostOf(url);
+    return `<html><title>${host}</title><body>Recorded surface ${url}</body></html>`;
   }
 }
 
@@ -282,7 +288,7 @@ async function captureSession(input: {
   title: string;
   url: string;
   html: string;
-  source: "dexscreener" | "github";
+  source: SourceId;
 }) {
   const id = crypto.randomUUID();
   const startedAt = nowMs();
@@ -323,7 +329,7 @@ async function captureSession(input: {
     }
   }
 
-  await scoreHtmlOnce(excerpt, input.source);
+  await scoreHtmlOnce(excerpt, input.source, input.url);
 
   getDb()
     .insert(schema.sessions)

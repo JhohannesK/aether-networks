@@ -1,92 +1,19 @@
-export type ScoreInput = {
-  source: "dexscreener" | "github";
-  title: string;
-  url: string;
-  liquidityUsd?: number;
-  ageMinutes?: number;
-  stars?: number;
-  description?: string;
-};
+import { getSource } from "@/lib/agents/sources/registry";
+import type { ScoreInput, ScoreResult, SourceId } from "@/lib/agents/sources/types";
 
-export type ScoreResult = {
-  score: number;
-  reasons: string[];
-};
+export type { ScoreInput, ScoreResult, SourceId };
 
 export function scoreOpportunity(input: ScoreInput): ScoreResult {
-  const reasons: string[] = [];
-  let score = 28;
-
-  if (input.source === "dexscreener") {
-    const liq = input.liquidityUsd ?? 0;
-    if (liq >= 50_000) {
-      score += 36;
-      reasons.push("liquidity ≥ $50k");
-    } else if (liq >= 10_000) {
-      score += 24;
-      reasons.push("liquidity ≥ $10k");
-    } else if (liq > 0) {
-      score += 10;
-      reasons.push("thin but listed liquidity");
-    } else {
-      reasons.push("no liquidity printed");
-    }
-
-    const age = input.ageMinutes ?? 9999;
-    if (age <= 90) {
-      score += 22;
-      reasons.push("pair younger than 90m");
-    } else if (age <= 720) {
-      score += 12;
-      reasons.push("pair younger than 12h");
-    }
-  } else {
-    const stars = input.stars ?? 0;
-    if (stars >= 20) {
-      score += 30;
-      reasons.push("repo already attracting stars");
-    } else if (stars >= 3) {
-      score += 18;
-      reasons.push("early signal on GitHub");
-    } else {
-      score += 8;
-      reasons.push("fresh Solana repo");
-    }
-    if (/launch|token|market|agent|pay/i.test(`${input.title} ${input.description ?? ""}`)) {
-      score += 14;
-      reasons.push("launch / market language");
-    }
-  }
-
-  if (/solana|spl|usdc|pump/i.test(`${input.title} ${input.url}`)) {
-    score += 8;
-    reasons.push("Solana surface");
-  }
-
-  return { score: Math.max(1, Math.min(100, Math.round(score))), reasons };
+  return getSource(input.source).score(input);
 }
 
-export function scoreFromHtml(html: string, source: ScoreInput["source"]): ScoreResult {
-  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 4000);
-  const liqMatch = text.match(/\$[\s]?([\d,.]+)\s*(k|m)?/i);
-  let liquidityUsd: number | undefined;
-  if (liqMatch) {
-    const n = Number(liqMatch[1].replace(/,/g, ""));
-    const mult = (liqMatch[2] ?? "").toLowerCase() === "m" ? 1_000_000 : (liqMatch[2] ?? "").toLowerCase() === "k" ? 1_000 : 1;
-    liquidityUsd = Number.isFinite(n) ? n * mult : undefined;
-  }
-  const starsMatch = text.match(/([\d,.]+)\s*stars?/i);
-  const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
-  return scoreOpportunity({
-    source,
-    title: titleMatch?.[1] ?? "extracted page",
-    url: source === "dexscreener" ? "https://dexscreener.com" : "https://github.com",
-    liquidityUsd,
-    stars: starsMatch ? Number(starsMatch[1].replace(/,/g, "")) : undefined,
-    description: text.slice(0, 240),
-  });
+export function scoreFromHtml(html: string, source: SourceId, url: string): ScoreResult {
+  const plugin = getSource(source);
+  const parsed = plugin.parseHtml(html, url);
+  return plugin.score(parsed);
 }
 
+/** Dexscreener-oriented VM demo. Authoritative score is always scoreFromHtml. */
 export const SANDBOX_SCORER = `
 import json, re, sys
 html = open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else sys.stdin.read()
