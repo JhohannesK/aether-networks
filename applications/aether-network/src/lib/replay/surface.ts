@@ -59,6 +59,43 @@ function looksLikeSourceSoup(text: string): boolean {
   return /[{};<>]|box-sizing|webkit-|margin:0|DOCTYPE|cf-/.test(text);
 }
 
+function visibleText(html: string): string {
+  return html
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const NO_LIQUIDITY = /no liquidity/i;
+
+/** Card/feed blurb. Never returns challenge CSS or raw HTML. */
+export function humanExcerpt(
+  raw: string | null | undefined,
+  options: { reasons?: string[]; url?: string } = {},
+): string {
+  const reasons = options.reasons ?? [];
+  const noLiq = reasons.find((reason) => NO_LIQUIDITY.test(reason));
+  const source = (raw ?? "").trim();
+  if (!source) return noLiq ?? reasons[0] ?? "No extract stored";
+
+  if (isChallengeHtml(source)) return "Bot wall";
+
+  const text = visibleText(source);
+  if (isChallengeHtml(text)) return "Bot wall";
+
+  const liq = text.match(/liquidity\s*\$[\s]?[\d,.]+(?:\s*[km])?/i);
+  if (liq) return liq[0];
+
+  if (looksLikeSourceSoup(text)) {
+    const host = options.url ? hostOf(options.url) : "";
+    return noLiq ?? (host ? `Recorded pass on ${host}` : "No readable extract");
+  }
+
+  return (text || noLiq || "Recorded pass").slice(0, 180);
+}
+
 export function viewportFromExcerpt(
   html: string | null | undefined,
   targetUrl: string,
