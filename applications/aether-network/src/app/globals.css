@@ -60,3 +60,33 @@ h2,
 .floaty-slow {
   animation: floaty 8s ease-in-out infinite;
 }
+
+@keyframes replay-scrub {
+  from {
+    transform: scaleX(0.08);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes replay-cursor {
+  0%,
+  100% {
+    top: 38%;
+    left: 16%;
+  }
+  50% {
+    top: 22%;
+    left: 64%;
+  }
+}
+
+.replay-scrub {
+  transform-origin: left center;
+  animation: replay-scrub 7s ease-in-out infinite alternate;
+}
+
+.replay-cursor {
+  animation: replay-cursor 6s ease-in-out infinite;
+}
