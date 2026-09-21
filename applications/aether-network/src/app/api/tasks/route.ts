@@ -1,10 +1,11 @@
-import { createTask, listTasks } from "@/lib/market/tasks";
+import { createTask, listTasks, publicTask } from "@/lib/market/tasks";
+import { isHttpUrl } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return Response.json({ tasks: listTasks() });
+  return Response.json({ tasks: listTasks().map(publicTask) });
 }
 
 export async function POST(request: Request) {
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
   if (!body.title || !body.url) {
     return Response.json({ error: "title and url required" }, { status: 400 });
   }
+  if (!isHttpUrl(body.url)) {
+    return Response.json({ error: "url must be http(s)" }, { status: 400 });
+  }
   const task = createTask({
     title: body.title,
     url: body.url,
@@ -25,5 +29,5 @@ export async function POST(request: Request) {
     posterWallet: body.posterWallet,
     opportunityId: body.opportunityId,
   });
-  return Response.json({ task });
+  return Response.json({ task: publicTask(task!) });
 }

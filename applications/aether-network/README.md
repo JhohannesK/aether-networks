@@ -75,13 +75,13 @@ npm test
 ## Demo script
 
 1. Landing. Mint switch. Hunt / Bid / Settle chips. White hunter band.
-2. `/feed`. Two fixture cards appear immediately. After `npm run agents`, Nyx and Vesper append live Dexscreener / GitHub rows.
-3. Post a task from a card. Use Phantom/Solflare or the local treasury pubkey.
-4. `/tasks` moves open → claimed → running → complete on the next worker tick.
+2. `/feed`. Two fixture cards appear immediately. After `npm run agents`, Nyx and Vesper append live Dexscreener / GitHub rows. Or post any https URL from the header CTA.
+3. Post a custom URL bounty (primary path) or bid from a card. Use Phantom/Solflare or the local treasury pubkey.
+4. `/tasks` moves open → claimed → running → complete on the next worker tick. Result excerpt comes from sqlite, not `/api/results`.
 5. `/watch/[id]` is the proof: Solari GCS replay iframe when live, timeline + fake player when Simulated. Extract HTML is never the replay surface.
 6. `/agents` shows the three circular hunters, derived wallets, 10% credits, ledger lines marked Simulated when off-chain.
 
-Closed loop you can say out loud: hunter files the pair → you bid → Helix records the work → credits refill the network.
+Closed loop you can say out loud: hunter files the pair → you bid → Helix records the work → credits refill the network. Custom https URL skips the hunt step.
 
 ## Solari features used
 
@@ -101,7 +101,7 @@ Never call `solari.launch()` from a Route Handler. The worker owns browsers beca
 - Devnet USDC mint `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU`
 - Escrow is SQLite. On complete: 90% worker, 10% network credits
 - Agent keypairs from `AETHER_MASTER_SEED` via `@solana/kit` + web3.js. Secrets stay in gitignored sqlite
-- `/api/results/[id]` advertises x402 headers but does not gate the dashboard read — the bounty already prepaid the loop
+- `GET /api/results/[id]` returns **402** unless `X-Aether-Access: prepaid` and the bounty is prepaid (complete/failed or ledger payout). Dashboard `/tasks` and `/watch` read sqlite directly.
 
 ## Layout
 
@@ -113,12 +113,12 @@ applications/aether-network/
   src/app               # landing, /feed /tasks /agents /watch/[id]
   src/app/api           # enqueue / read / settle. no browser launch
   src/lib/solari
-  src/lib/agents
-  src/lib/market
+  src/lib/agents        # hunters + sources/{dexscreener,github,web}
+  src/lib/market        # tasks, wallets, settlement, rails/, x402
   src/lib/db
   proof/
 ```
 
 ## Out of slice
 
-Custom Solana program, network token, staking, vector DB, IPFS, Discord/Telegram login, auto on-chain claim/swap.
+Custom Solana program, network token, staking, vector DB, IPFS, Discord/Telegram login, auto on-chain claim/swap, Stripe/points rails, additional hunters.

@@ -24,6 +24,7 @@ export default function TasksPage() {
             <h1 className="mt-3 text-5xl md:text-7xl">Tasks</h1>
             <p className="mt-3 max-w-xl text-sm text-muted">
               Create → claim → stealth run → JSON + replay → 10% take-rate credits.
+              Post any https URL.
             </p>
           </div>
           <CreateTaskDialog demoPubkey={treasury?.pubkey} />
@@ -36,26 +37,51 @@ export default function TasksPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {data.tasks.map((task) => (
-              <article key={task.id} className="rounded-[28px] bg-card p-6 hairline md:flex md:items-center md:justify-between">
-                <div>
-                  <p className="text-[11px] tracking-[0.16em] uppercase text-mint">{task.status}</p>
-                  <h2 className="mt-2 text-3xl">{task.title}</h2>
-                  <p className="mt-2 text-sm text-muted break-all">{task.url}</p>
-                </div>
-                <div className="mt-4 flex items-center gap-6 md:mt-0">
-                  <div className="text-right">
-                    <p className="text-2xl">{formatUsd(task.bountyUsdc)} USDC</p>
-                    <p className="text-xs text-muted">{task.hunterId ?? "unclaimed"}</p>
+            {data.tasks.map((task) => {
+              const result = task.resultJson
+                ? (JSON.parse(task.resultJson) as {
+                    excerpt?: string;
+                    score?: number;
+                    reasons?: string[];
+                  })
+                : null;
+              return (
+                <article
+                  key={task.id}
+                  className="rounded-[28px] bg-card p-6 hairline md:flex md:items-center md:justify-between"
+                >
+                  <div>
+                    <p className="text-[11px] tracking-[0.16em] uppercase text-mint">
+                      {task.status}
+                    </p>
+                    <h2 className="mt-2 text-3xl">{task.title}</h2>
+                    <p className="mt-2 text-sm text-muted break-all">{task.url}</p>
+                    {result?.excerpt ? (
+                      <p className="mt-3 max-w-xl text-sm text-muted line-clamp-2">
+                        {result.excerpt}
+                      </p>
+                    ) : null}
+                    {typeof result?.score === "number" ? (
+                      <p className="mt-2 text-xs text-muted">
+                        score {Math.round(result.score)}
+                        {result.reasons?.length ? ` · ${result.reasons.join(" · ")}` : ""}
+                      </p>
+                    ) : null}
                   </div>
-                  {task.sessionId ? (
-                    <Link href={`/watch/${task.sessionId}`} className="text-sm text-mint">
-                      Proof
-                    </Link>
-                  ) : null}
-                </div>
-              </article>
-            ))}
+                  <div className="mt-4 flex items-center gap-6 md:mt-0">
+                    <div className="text-right">
+                      <p className="text-2xl">{formatUsd(task.bountyUsdc)} USDC</p>
+                      <p className="text-xs text-muted">{task.hunterId ?? "unclaimed"}</p>
+                    </div>
+                    {task.sessionId ? (
+                      <Link href={`/watch/${task.sessionId}`} className="text-sm text-mint">
+                        Proof
+                      </Link>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

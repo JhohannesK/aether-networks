@@ -25,6 +25,14 @@ export function getTask(id: string) {
   );
 }
 
+export type TaskRow = NonNullable<ReturnType<typeof getTask>>;
+
+/** HTTP-safe task: omit resultJson so /api/tasks is not an x402 backdoor. */
+export function publicTask(task: TaskRow) {
+  const { resultJson: _resultJson, ...rest } = task;
+  return { ...rest, resultJson: null as string | null };
+}
+
 export function createTask(input: {
   title: string;
   url: string;

@@ -53,8 +53,8 @@ Settlement does not require live Solari. It needs a funded treasury ATA on devne
 Say this out loud: hunter files the pair → you bid → Helix records the work → credits refill the network.
 
 1. Landing. Mint switch. Hunt / Bid / Settle chips. White hunter band.
-2. `/feed`. Two fixture cards immediately. Worker appends live Dexscreener / GitHub rows.
-3. Post a task from a card. Phantom/Solflare or the local treasury pubkey.
+2. `/feed`. Two fixture cards immediately. Worker appends live Dexscreener / GitHub rows. Or post any https URL.
+3. Post a custom URL bounty (primary) or bid from a card. Phantom/Solflare or the local treasury pubkey.
 4. `/tasks` moves `open → claimed → running → complete` on the next worker tick (~12s).
 5. `/watch/[id]` is the proof: Solari GCS replay iframe when live, timeline + fake player when Simulated. Extract HTML is never the replay surface.
 6. `/agents` shows Nyx, Vesper, Helix, derived wallets, 10% credits, ledger lines marked Simulated when off-chain.

@@ -70,18 +70,26 @@ Unfunded treasury is the expected contest default. The dashboard still shows pay
 
 ## x402
 
-`GET /api/results/[id]` advertises:
+`GET /api/results/[id]` is gated. Machine reads without proof of prepaid access get **402**.
 
 ```
 Payment-Protocol: x402
 X-402-Asset: USDC
 X-402-Network: solana-devnet
 X-402-Amount: <bounty>
-X-402-Required: false
+X-402-Required: true | false
 ```
 
-Dashboard reads are prepaid by the posted bounty. Headers are the contest hook, not a gate.
+Dashboard `/watch` and `/tasks` read sqlite via RSC (bounty already escrowed). They do **not** call this route. Machine clients that need the JSON must send:
+
+```
+X-Aether-Access: prepaid
+```
+
+That header is the explicit prepaid exception — not Referer sniffing. Gate also requires `bountyUsdc > 0` and either a completed/failed task or a ledger `payout` row. No x402 facilitator in this repo: headers + HTTP 402 + sqlite check.
+
+`GET /api/tasks` and `GET /api/tasks/[id]` strip `resultJson` so the list handlers are not a backdoor.
 
 ## Out of slice
 
-Custom program, network token, staking/reputation beyond Helix's delivery counter, auto claim/swap, IPFS/Arweave for replays (Solari hosts the recording).
+Custom program, network token, staking/reputation beyond Helix's delivery counter, auto claim/swap, IPFS/Arweave for replays (Solari hosts the recording), Stripe/points rails, additional hunters.
