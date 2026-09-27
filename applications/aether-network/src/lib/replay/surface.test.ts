@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  humanExcerpt,
   isChallengeHtml,
   isHostedReplayUrl,
   replaySurfaceForSession,
@@ -75,5 +76,47 @@ describe("replay surface", () => {
   it("should pull the goto URL off the timeline", () => {
     expect(targetUrlFromTimeline(HELIX_TIMELINE)).toBe(HELIX_TIMELINE[1]?.detail);
     expect(targetUrlFromTimeline([{ t: 0, action: "launch", detail: "mock" }])).toBe("");
+  });
+});
+
+const CARD_DUMP =
+  "Just a moment... *{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-";
+
+describe("humanExcerpt", () => {
+  it("should summarize Cloudflare HTML as a bot wall, never CSS", () => {
+    const blurb = humanExcerpt(CLOUDFLARE_HTML, {
+      reasons: ["no liquidity printed"],
+    });
+    expect(blurb).toBe("Bot wall");
+    expect(blurb).not.toMatch(/box-sizing|webkit-|margin:0|DOCTYPE|<html/i);
+  });
+
+  it("should summarize the stripped tasks-card dump as a bot wall", () => {
+    const blurb = humanExcerpt(CARD_DUMP, { reasons: ["no liquidity printed"] });
+    expect(blurb).toBe("Bot wall");
+    expect(blurb).not.toMatch(/Just a moment|box-sizing|\*|\{/);
+  });
+
+  it("should keep real opportunity text and prefer liquidity", () => {
+    expect(humanExcerpt(FIXTURE_HTML)).toBe("liquidity $42800");
+    const github = humanExcerpt(
+      "<html><title>helix-labs/agent-market</title><body>Paid stealth agents 12 stars Solana launch</body></html>",
+    );
+    expect(github).toMatch(/Paid stealth agents 12 stars Solana launch/);
+    expect(github).not.toMatch(/<html|<title|<|>/);
+  });
+
+  it("should use no-liquidity reasons when the extract is source soup", () => {
+    expect(
+      humanExcerpt("*{box-sizing:border-box;margin:0;padding:0}", {
+        reasons: ["no liquidity printed", "Solana surface"],
+      }),
+    ).toBe("no liquidity printed");
+  });
+
+  it("should stay idempotent on already-human blurbs", () => {
+    expect(humanExcerpt("Bot wall")).toBe("Bot wall");
+    expect(humanExcerpt("no liquidity printed")).toBe("no liquidity printed");
+    expect(humanExcerpt("")).toBe("No extract stored");
   });
 });

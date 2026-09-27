@@ -6,6 +6,7 @@ import {
   resultGate,
   resultPaymentHeaders,
 } from "@/lib/market/x402";
+import { humanExcerpt } from "@/lib/replay/surface";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,10 +55,26 @@ export async function GET(
     );
   }
 
+  const parsed = task!.resultJson
+    ? (JSON.parse(task!.resultJson) as {
+        excerpt?: string;
+        reasons?: string[];
+      })
+    : null;
+  const result = parsed
+    ? {
+        ...parsed,
+        excerpt: humanExcerpt(parsed.excerpt, {
+          url: task!.url,
+          reasons: parsed.reasons,
+        }),
+      }
+    : null;
+
   return new Response(
     JSON.stringify({
       task,
-      result: task!.resultJson ? JSON.parse(task!.resultJson) : null,
+      result,
       x402: { required: false, reason: gate.reason },
     }),
     { headers },

@@ -16,7 +16,7 @@ import {
   type SourceId,
 } from "@/lib/agents/sources";
 import { ensureWallets } from "@/lib/market/wallets";
-import { hostOf } from "@/lib/replay/surface";
+import { hostOf, humanExcerpt } from "@/lib/replay/surface";
 import { nowMs } from "@/lib/utils";
 
 export const HUNTER_DEFS = [
@@ -195,7 +195,7 @@ export async function runPaidTask(taskId: string) {
       reasons: result.reasons,
       scoredVia: via,
       replayPath: `/watch/${session.id}`,
-      excerpt: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 280),
+      excerpt: humanExcerpt(html, { url: task.url, reasons: result.reasons }),
     };
 
     db.update(schema.tasks)

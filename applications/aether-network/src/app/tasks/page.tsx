@@ -4,6 +4,7 @@ import { LiveDot } from "@/components/live-dot";
 import { Nav } from "@/components/nav";
 import { StatusBanner } from "@/components/status-banner";
 import { snapshot } from "@/lib/dashboard";
+import { humanExcerpt } from "@/lib/replay/surface";
 import { formatUsd } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,10 @@ export default function TasksPage() {
                     <p className="mt-2 text-sm text-muted break-all">{task.url}</p>
                     {result?.excerpt ? (
                       <p className="mt-3 max-w-xl text-sm text-muted line-clamp-2">
-                        {result.excerpt}
+                        {humanExcerpt(result.excerpt, {
+                          url: task.url,
+                          reasons: result.reasons,
+                        })}
                       </p>
                     ) : null}
                     {typeof result?.score === "number" ? (
