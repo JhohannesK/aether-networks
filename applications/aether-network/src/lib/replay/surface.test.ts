@@ -119,4 +119,44 @@ describe("humanExcerpt", () => {
     expect(humanExcerpt("no liquidity printed")).toBe("no liquidity printed");
     expect(humanExcerpt("")).toBe("No extract stored");
   });
+
+  it.each([
+    "Just a moment…",
+    "Just\u00a0a\u00a0moment\u2026",
+    "Just&#32;a&#32;moment&#8230;",
+    "Just&nbsp;a&nbsp;moment&hellip;",
+    "Checking your browser before accessing dexscreener.com.",
+    "Verify you are human by completing the action below.",
+    "Attention Required! | Cloudflare",
+    "Sorry, you have been blocked",
+    "DDoS protection by Cloudflare",
+    "Performance & security by Cloudflare",
+    "Performance &amp; security by Cloudflare",
+    "Please enable cookies.",
+    "Ray ID: 7f3abc",
+    "dexscreener.com needs to review the security of your connection before proceeding.",
+  ])("should hide interstitial copy %s", (sample) => {
+    const blurb = humanExcerpt(sample, {
+      url: "https://dexscreener.com/solana/x",
+      reasons: ["no liquidity printed"],
+    });
+    expect(blurb, sample).toBe("Bot wall");
+    expect(blurb).not.toMatch(/just a moment|box-sizing|cloudflare|ray id|checking your browser|verify you are human|attention required|blocked|cookies/i);
+  });
+
+  it("should summarize a Cloudflare block page that has no challenge-platform script", () => {
+    const block = `<!DOCTYPE html><html><head><title>Attention Required! | Cloudflare</title></head><body><h1>Sorry, you have been blocked</h1><p>You are unable to access dexscreener.com</p><p>Performance &amp; security by Cloudflare</p><p>Cloudflare Ray ID: <strong>7f3abc</strong></p></body></html>`;
+    const blurb = humanExcerpt(block, { url: "https://dexscreener.com/solana/x" });
+    expect(blurb).toBe("Bot wall");
+    expect(isChallengeHtml(block)).toBe(true);
+    expect(blurb).not.toMatch(/Attention Required|Ray ID|Sorry, you have been blocked|<h1/i);
+  });
+
+  it("should keep a real sentence that mentions Cloudflare", () => {
+    const blurb = humanExcerpt(
+      "Notes on using Cloudflare in front of a Solana launch checklist for agents",
+    );
+    expect(blurb).toMatch(/Solana launch checklist/);
+    expect(blurb).not.toBe("Bot wall");
+  });
 });
