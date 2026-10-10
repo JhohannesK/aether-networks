@@ -26,6 +26,22 @@ const CHALLENGE_MARKERS = [
   /enable javascript and cookies to continue/i,
 ];
 
+/**
+ * Body copy from Cloudflare block / IUAM / Turnstile pages. These often
+ * arrive without challenge-platform markup, so the structural markers miss.
+ */
+const INTERSTITIAL_COPY = [
+  /checking your browser/i,
+  /verify you are human/i,
+  /attention required/i,
+  /ddos protection by cloudflare/i,
+  /performance\s*(?:&|and)\s*security by cloudflare/i,
+  /sorry, you have been blocked/i,
+  /security of your connection/i,
+  /please enable cookies/i,
+  /ray id\s*:/i,
+];
+
 export function isHostedReplayUrl(url: string | null | undefined): url is string {
   if (!url) return false;
   try {
@@ -37,7 +53,10 @@ export function isHostedReplayUrl(url: string | null | undefined): url is string
 }
 
 export function isChallengeHtml(html: string): boolean {
-  return CHALLENGE_MARKERS.some((marker) => marker.test(html));
+  if (CHALLENGE_MARKERS.some((marker) => marker.test(html))) return true;
+  const text = visibleText(html);
+  if (CHALLENGE_MARKERS.some((marker) => marker.test(text))) return true;
+  return INTERSTITIAL_COPY.some((marker) => marker.test(text));
 }
 
 export function targetUrlFromTimeline(timeline: TimelineStep[], fallback = ""): string {
@@ -59,11 +78,41 @@ function looksLikeSourceSoup(text: string): boolean {
   return /[{};<>]|box-sizing|webkit-|margin:0|DOCTYPE|cf-/.test(text);
 }
 
+function codePoint(code: number): string {
+  if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return "";
+  return String.fromCodePoint(code);
+}
+
+function decodeEntities(value: string): string {
+  const named: Record<string, string> = {
+    nbsp: " ",
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    hellip: "...",
+  };
+  let current = value;
+  for (let pass = 0; pass < 5; pass += 1) {
+    const next = current
+      .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => codePoint(Number.parseInt(hex, 16)))
+      .replace(/&#(\d+);/g, (_, dec: string) => codePoint(Number.parseInt(dec, 10)))
+      .replace(/&([a-z]+);/gi, (match, name: string) => named[name.toLowerCase()] ?? match);
+    if (next === current) return current;
+    current = next;
+  }
+  return current;
+}
+
 function visibleText(html: string): string {
-  return html
+  const stripped = html
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
     .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+    .replace(/<[^>]+>/g, " ");
+  return decodeEntities(stripped)
+    .replace(/[\u200b-\u200d\ufeff]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
