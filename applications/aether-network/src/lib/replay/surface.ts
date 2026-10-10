@@ -18,6 +18,7 @@ export type ReplaySurface =
   | { kind: "iframe"; src: string }
   | { kind: "mock"; targetUrl: string; viewport: ViewportSnapshot };
 
+/** Always a challenge, even inside a long extract. */
 const CHALLENGE_MARKERS = [
   /just a moment/i,
   /cf-browser-verification/i,
@@ -27,8 +28,9 @@ const CHALLENGE_MARKERS = [
 ];
 
 /**
- * Body copy from Cloudflare block / IUAM / Turnstile pages. These often
- * arrive without challenge-platform markup, so the structural markers miss.
+ * Boilerplate that also shows up in real writing. Flag it only when the
+ * visible extract is interstitial-shaped, or the raw page also carries a
+ * Cloudflare challenge signal.
  */
 const INTERSTITIAL_COPY = [
   /checking your browser/i,
@@ -42,6 +44,23 @@ const INTERSTITIAL_COPY = [
   /ray id\s*:/i,
 ];
 
+/** Markup that means the page itself is a Cloudflare wall, not a mention. */
+const CLOUDFLARE_SIGNALS = [
+  /cdn-cgi\/challenge/i,
+  /challenge-platform/i,
+  /cf-browser-verification/i,
+  /challenges\.cloudflare\.com/i,
+  /cf-turnstile/i,
+  /\bcf-ray\b/i,
+  /_cf_chl/i,
+  /cf-mitigated/i,
+];
+
+/** One screen of wall copy. A real article is longer than this. */
+const SHORT_INTERSTITIAL_CHARS = 480;
+/** Block pages stack several boilerplate lines and stay under a couple screens. */
+const STACKED_INTERSTITIAL_CHARS = 1600;
+
 export function isHostedReplayUrl(url: string | null | undefined): url is string {
   if (!url) return false;
   try {
@@ -52,11 +71,25 @@ export function isHostedReplayUrl(url: string | null | undefined): url is string
   }
 }
 
+function interstitialHits(text: string): number {
+  return INTERSTITIAL_COPY.filter((marker) => marker.test(text)).length;
+}
+
+function interstitialShaped(text: string): boolean {
+  if (text.length <= SHORT_INTERSTITIAL_CHARS) return true;
+  return text.length <= STACKED_INTERSTITIAL_CHARS && interstitialHits(text) >= 2;
+}
+
+function hasCloudflareSignal(html: string): boolean {
+  return CLOUDFLARE_SIGNALS.some((marker) => marker.test(html));
+}
+
 export function isChallengeHtml(html: string): boolean {
   if (CHALLENGE_MARKERS.some((marker) => marker.test(html))) return true;
   const text = visibleText(html);
   if (CHALLENGE_MARKERS.some((marker) => marker.test(text))) return true;
-  return INTERSTITIAL_COPY.some((marker) => marker.test(text));
+  if (!INTERSTITIAL_COPY.some((marker) => marker.test(text))) return false;
+  return interstitialShaped(text) || hasCloudflareSignal(html);
 }
 
 export function targetUrlFromTimeline(timeline: TimelineStep[], fallback = ""): string {

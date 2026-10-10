@@ -82,6 +82,28 @@ describe("replay surface", () => {
 const CARD_DUMP =
   "Just a moment... *{box-sizing:border-box;margin:0;padding:0}html{line-height:1.15;-webkit-text-size-adjust:100%;color:#313131;font-family:system-ui,-apple-";
 
+const GENERIC_INTERSTITIALS = [
+  "Checking your browser before accessing dexscreener.com.",
+  "Verify you are human by completing the action below.",
+  "Attention Required! | Cloudflare",
+  "Sorry, you have been blocked",
+  "DDoS protection by Cloudflare",
+  "Performance & security by Cloudflare",
+  "Performance &amp; security by Cloudflare",
+  "Please enable cookies.",
+  "Ray ID: 7f3abc",
+  "dexscreener.com needs to review the security of your connection before proceeding.",
+];
+
+function normalPage(phrase: string): string {
+  const lead = "Helix filed this Solana pair after reading the public page on the desk.";
+  const body = "The pair showed volume, a mint, and a creator wallet on the public book. ".repeat(
+    40,
+  );
+  const close = "We score once in the sandbox and then keep the local number on the card.";
+  return `<html><title>Desk notes</title><body><p>${lead} ${phrase} ${body}${close}</p></body></html>`;
+}
+
 describe("humanExcerpt", () => {
   it("should summarize Cloudflare HTML as a bot wall, never CSS", () => {
     const blurb = humanExcerpt(CLOUDFLARE_HTML, {
@@ -158,5 +180,52 @@ describe("humanExcerpt", () => {
     );
     expect(blurb).toMatch(/Solana launch checklist/);
     expect(blurb).not.toBe("Bot wall");
+  });
+
+  it.each(GENERIC_INTERSTITIALS)(
+    "should keep a normal page that mentions %s",
+    (phrase) => {
+      const page = normalPage(phrase);
+      expect(isChallengeHtml(page), phrase).toBe(false);
+      const blurb = humanExcerpt(page, {
+        url: "https://dexscreener.com/solana/nyx",
+        reasons: ["Solana surface"],
+      });
+      expect(blurb, phrase).not.toBe("Bot wall");
+      expect(blurb).toMatch(/Helix filed this Solana pair/);
+    },
+  );
+
+  it("should flag a long page when boilerplate sits next to a Cloudflare challenge signal", () => {
+    const page = normalPage("Please enable cookies.").replace(
+      "</body>",
+      '<script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script></body>',
+    );
+    expect(isChallengeHtml(page)).toBe(true);
+    expect(humanExcerpt(page)).toBe("Bot wall");
+  });
+
+  it("should keep strong challenge markers on a long page", () => {
+    const page = normalPage("pair liquidity stays on the card").replace(
+      "</body>",
+      '<script src="/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1"></script><p>Just a moment...</p></body>',
+    );
+    expect(isChallengeHtml(page)).toBe(true);
+    expect(humanExcerpt(page)).toBe("Bot wall");
+  });
+
+  it("should flag a stacked Cloudflare block page that is longer than one line", () => {
+    const block = `<html><title>Attention Required! | Cloudflare</title><body>
+      <h1>Sorry, you have been blocked</h1>
+      <p>You are unable to access example.com</p>
+      <h2>Why have I been blocked?</h2>
+      <p>This website is using a security service to protect itself from online attacks. The action you just performed triggered the security solution. There are several actions that could trigger this block including submitting a certain word or phrase, a SQL command or malformed data.</p>
+      <h2>What can I do to resolve this?</h2>
+      <p>You can email the site owner to let them know you were blocked. Please include what you were doing when this page came up and the Cloudflare Ray ID found at the bottom of this page.</p>
+      <p>Cloudflare Ray ID: 7f3abcde9f1a2b3c</p>
+      <p>Performance &amp; security by Cloudflare</p>
+    </body></html>`;
+    expect(isChallengeHtml(block)).toBe(true);
+    expect(humanExcerpt(block)).toBe("Bot wall");
   });
 });
