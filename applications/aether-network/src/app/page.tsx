@@ -4,13 +4,18 @@ import { ActionChips } from "@/components/chips";
 import { AgentAvatar } from "@/components/agent-avatar";
 import { FooterCard } from "@/components/footer-card";
 import { Nav } from "@/components/nav";
+import { StatusBanner } from "@/components/status-banner";
 import { SwitchHero } from "@/components/switch-hero";
 import { Button } from "@/components/ui/button";
+
+// Request-time render so the banner follows the runtime SOLARI_API_KEY.
+export const dynamic = "force-dynamic";
 
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-background">
       <Nav />
+      <StatusBanner />
       <section className="grid items-center gap-10 px-6 pb-20 md:grid-cols-2 md:px-16 md:pt-6">
         <SwitchHero />
         <div>
