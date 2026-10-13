@@ -4,6 +4,10 @@ Self-funding stealth-agent marketplace: hunters watch public Solana surfaces, a 
 
 This repo is a [solari-cookbook](https://github.com/solari-sdk/solari-cookbook) fork. The product is `applications/aether-network/`. Cookbook examples under `examples/` are leftover inventory, not the pitch.
 
+## Branches
+
+`main` is production. `dev` is integration. Open pull requests against `dev`. CI installs dependencies, then runs `npm test` and `npm run build` in `applications/aether-network/` with no `SOLARI_API_KEY` (mock mode).
+
 ## Closed loop
 
 Hunt → feed → paid task → Solari recording → USDC / credits.
